@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    # Używamy obrazu MariaDB
+    image: mariadb:latest
+    container_name: wordpress_db
+    # Restartuj kontener automatycznie, jeśli się zatrzyma
+    restart: always
+    # Zmienne środowiskowe dla bazy danych
+    environment:
+      MYSQL_ROOT_PASSWORD: 'bardzo_silne_haslo_root' # Zmień na bezpieczne hasło!
+      MYSQL_DATABASE: 'wordpress'
+      MYSQL_USER: 'wordpress_user'
+      MYSQL_PASSWORD: 'bardzo_silne_haslo_usera' # Zmień na bezpieczne hasło!
+    # Mapowanie wolumenu dla trwałości danych bazy
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wordpress_network
+
+  wordpress:
+    # Używamy oficjalnego obrazu WordPress
+    image: wordpress:latest
+    container_name: wordpress_app
+    # Zależy od usługi bazy danych
+    depends_on:
+      - db
+    # Restartuj kontener automatycznie
+    restart: always
+    # Mapowanie portu: port 8080 na Twoim komputerze będzie przekierowany do portu 80 w kontenerze
+    ports:
+      - "8080:80"
+    # Zmienne środowiskowe dla WordPressa - muszą pasować do ustawień bazy danych
+    environment:
+      WORDPRESS_DB_HOST: db:3306 # Nazwa usługi 'db' i domyślny port MySQL/MariaDB
+      WORDPRESS_DB_NAME: 'wordpress'
+      WORDPRESS_DB_USER: 'wordpress_user'
+      WORDPRESS_DB_PASSWORD: 'bardzo_silne_haslo_usera' # Użyj te same hasło co w usłudze 'db'
+      WORDPRESS_TABLE_PREFIX: 'wp_'
+    # Mapowanie wolumenu dla trwałości danych WordPressa (motywy, wtyczki, uploady)
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - wordpress_network
+
+# Definicja sieci, aby kontenery mogły się komunikować
+networks:
+  wordpress_network:
+    driver: bridge
+
+# Definicja nazwanych wolumenów dla trwałości danych
+volumes:
+  db_data:
+  wordpress_data:
